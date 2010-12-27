@@ -30,8 +30,10 @@ class SyntaxHighlightingText(tk.Text):
         for tag in self.tags.keys():
             self.tag_remove(tag, start, end)
             
+    def getlines(self):
+        return self.get("1.0", tk.END).split("\n")[:-1]
+        
     def map_bracketlevels(self):
-        lines = self.get("1.0", tk.END).split("\n")[:-1]
         bracketlevels = [0]
         for line in lines[:-1]: # We needn't read the last line
             opened, closed = 0, 0
@@ -45,6 +47,7 @@ class SyntaxHighlightingText(tk.Text):
         return bracketlevels
 
     def key_press(self, key):
+        print self.selection_get()
         cline = self.index(tk.INSERT).split('.')[0]
         lineend = self.search("\n",self.index(tk.INSERT))
 

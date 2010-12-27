@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+import sys
 import Tkinter as tk
 from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
-import rconsole, editor
+import rconsole, editor, saveload
 
 def inputeater(process):
     def handler(e):
@@ -65,6 +66,11 @@ if __name__ == '__main__':
     input.bind("<Return>", inputeater(rprocess))
     
     split.add(rhs)
+    
+    # Set up saving and loading
+    fileeditor = saveload.FileEditor(editpane)
+    if len(sys.argv) > 1:
+        fileeditor.load(sys.argv[1])
     
     # Show the window
     editpane.focus_set()
