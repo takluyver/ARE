@@ -74,5 +74,5 @@ if __name__ == '__main__':
     input.pack(fill=tk.X, expand=True)
     split.add(rhs)
     
-    sht.focus_set()
+    editpane.focus_set()
     root.mainloop()
