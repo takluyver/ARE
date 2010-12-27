@@ -1,78 +1,75 @@
+#!/usr/bin/env python
 import Tkinter as tk
-from string import ascii_letters, digits, punctuation
+from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
-from pygments.token import Literal, Comment
-lexer = get_lexer_by_name("r")
+import rconsole, editor
 
-class SyntaxHighlightingText(tk.Text):
-
-    tags = {'kw': 'orange',
-            'num': '#0099FF',    
-            'str': 'green',
-            'com': '#999999'}
+def inputeater(process):
+    def handler(e):
+        buf = e.widget.get("1.0", tk.END)
+        process.stdin.write(buf)
+        e.widget.delete("1.0", tk.END)
+        return "break"
+    return handler
     
-    tokentags = {Literal.String: 'str',
-                 Literal.Number: 'num',
-                 Comment.Single: 'com'}
-    #rkeywords = set(["
-    
-    def __init__(self, root, **options):
-        tk.Text.__init__(self, root, background="white", **options)
-        self.config_tags()
-        self.characters = ascii_letters + digits + punctuation
-
-        self.bind('<Key>', self.key_press)
-
-    def config_tags(self):
-        for tag, val in self.tags.items():
-            self.tag_config(tag, foreground=val)
-
-    def remove_tags(self, start, end):
-        for tag in self.tags.keys():
-            self.tag_remove(tag, start, end)
-
-    def key_press(self, key):
-        cline = self.index(tk.INSERT).split('.')[0]
-        lineend = self.search("\n",self.index(tk.INSERT))
-
-        buffer = self.get('%s.%d'%(cline,0),lineend)
-        tokenized = lexer.get_tokens(buffer)
-
-        self.remove_tags('%s.%d'%(cline, 0), lineend)
+def editorlinerunner(process):
+    def handler(e):
+        bracketmap = e.widget.map_bracketlevels()
+        startline = int(e.widget.index(tk.INSERT).split('.')[0]) - 1
+        while bracketmap[startline] > 0:
+            startline -= 1
+        endline = startline + 1
+        while endline < len(bracketmap) and bracketmap[endline] > 0:
+            endline += 1
         
-        start, end = 0, 0
-        for ttype, token in tokenized:
-            end = start + len(token)
-            
-            if ttype in self.tokentags:
-                self.tag_add(self.tokentags[ttype], '%s.%d'%(cline, start), '%s.%d'%(cline, end))
-            #if token in keyword.kwlist:
-            #    self.tag_add('kw', '%s.%d'%(cline, start), '%s.%d'%(cline, end))
-            #else:
-            #    for index in range(len(token)):
-            #        try:
-            #            int(token[index])
-            #        except ValueError:
-            #            pass
-            #        else:
-            #            self.tag_add('int', '%s.%d'%(cline, start+index))
-
-            start += len(token)
+        buf = e.widget.get("%d.%d"%(startline+1,0), "%d.%d"%(endline+1,0))
+        process.stdin.write(buf)
+    return handler
+    
+def editorallrunner(process):
+    def handler(e):
+        buf = e.widget.get("1.0",tk.END)
+        process.stdin.write(buf)
+    return handler
 
 if __name__ == '__main__':
+    rprocess = Popen(["R","--interactive", "--no-save"], stdin=PIPE,
+                        stdout=PIPE, stderr=STDOUT)
+    
+    # Left-right split
     root = tk.Tk()
     split = tk.PanedWindow(root, sashwidth=8)
     split.pack(fill=tk.BOTH, expand=True)
     
-    editpane = SyntaxHighlightingText(split)
+    # Editor (left hand side)
+    lexer = get_lexer_by_name("r")
+    editpane = editor.SyntaxHighlightingText(split, lexer)
+    editpane.bind("<F5>", editorlinerunner(rprocess))
+    editpane.bind("<Control-F5>", editorallrunner(rprocess))
     split.add(editpane)
     
+    # Right hand side: console output...
     rhs = tk.Frame(split)
-    console = tk.Text(rhs)
-    console.pack(fill=tk.BOTH, expand=True)
-    input = tk.Text(rhs, height=4)
-    input.pack(fill=tk.X, expand=True)
+    consoleframe = tk.Frame(rhs)
+    console = rconsole.ConsoleDisplay(consoleframe, process=rprocess)
+    console.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    scrollbar = tk.Scrollbar(consoleframe, command=console.yview)
+    console.config(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+    
+    consoleframe.pack(fill=tk.BOTH, expand=True)
+    
+    # ...and input
+    input = tk.Text(rhs, height=4, background="white")
+    input.pack(fill=tk.X)
+    input.bind("<Return>", inputeater(rprocess))
+    
     split.add(rhs)
     
+    # Show the window
     editpane.focus_set()
     root.mainloop()
+    
+    # Close down, without leaving an orphaned process.
+    console.updater.stop()
+    rprocess.terminate()
