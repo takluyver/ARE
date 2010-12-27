@@ -38,7 +38,7 @@ if __name__ == '__main__':
     
     # Left-right split
     root = tk.Tk()
-    split = tk.PanedWindow(root, sashwidth=8)
+    split = tk.PanedWindow(root, sashwidth=6)
     split.pack(fill=tk.BOTH, expand=True)
     
     # Editor (left hand side)

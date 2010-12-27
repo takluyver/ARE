@@ -34,9 +34,12 @@ class SyntaxHighlightingText(tk.Text):
         lines = self.get("1.0", tk.END).split("\n")[:-1]
         bracketlevels = [0]
         for line in lines[:-1]: # We needn't read the last line
-            tokenized = self.lexer.get_tokens(line)
-            opened = sum(1 for ttype, t in tokenized if t == "(")
-            closed = sum(1 for ttype, t in tokenized if t == ")")
+            opened, closed = 0, 0
+            for _, token in self.lexer.get_tokens(line):
+                if token == "(":
+                    opened += 1
+                elif token == ")":
+                    closed += 1
             newlevel = bracketlevels[-1] + opened - closed
             bracketlevels.append(newlevel if newlevel > 0 else 0)
         return bracketlevels
