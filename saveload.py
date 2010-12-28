@@ -13,6 +13,8 @@ class SaveLoadMixin(object):
     
     def __init__(self):
         # Tell Tk to hide hidden files in dialogs. A bit hackish.
+        # Borrowed from:
+        # http://www.createphpbb.com/tovid/viewtopic.php?t=635
         try:
             self.tk.call('namespace', 'import', '::tk::dialog::file::')
             self.tk.call('set', '::tk::dialog::file::showHiddenBtn','1')
