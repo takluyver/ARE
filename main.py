@@ -5,7 +5,7 @@ from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
 import rconsole, editor, saveload
 
-class AREApp(tk.Tk):
+class AREApp(tk.Tk, saveload.SaveLoadMixin):
     def __init__(self):
         tk.Tk.__init__(self)
         self.title("ARE")
@@ -42,22 +42,23 @@ class AREApp(tk.Tk):
         self.input.bind("<Return>", self.inputeater)
         
         split.add(rhs)
-        
-        # Set up saving and loading
-        fileeditor = saveload.FileEditor(self.editor)
-        if len(sys.argv) > 1:
-            fileeditor.load(sys.argv[1])
             
         # Menus
         menubar = tk.Menu(self)
-        menubar.add_command(label="Open", command=fileeditor.askopen)
-        menubar.add_command(label="Save", command=fileeditor.saveas)
+        menubar.add_command(label="Open", command=self.askopen)
+        menubar.add_command(label="Save", command=self.quietsave)
+        menubar.add_command(label="Save as", command=self.quietsave)
         menubar.add_separator()
         menubar.add_command(label="Run line (F5)", 
                             command=self.editorlinerunner)
         menubar.add_command(label="Run all (Ctrl-F5)",
                             command=self.editorallrunner)
         self.config(menu=menubar)
+        
+        # Keyboard shortcuts
+        self.bind("<Control-s>", self.quietsave)
+        self.bind("<Control-S>", self.asksave) # Capital S = Shift-S
+        self.bind("<Control-o>", self.askopen)
         
         # Show the window
         self.editor.focus_set()
@@ -87,6 +88,8 @@ class AREApp(tk.Tk):
 
 def main():
     root = AREApp()
+    if len(sys.argv) > 1:
+        fileeditor.load(sys.argv[1])
     root.mainloop()
     
     # Close down, without leaving an orphaned process.
