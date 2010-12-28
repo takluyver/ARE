@@ -35,7 +35,7 @@ class SyntaxHighlightingText(tk.Text):
         
     def map_bracketlevels(self):
         bracketlevels = [0]
-        for line in lines[:-1]: # We needn't read the last line
+        for line in self.getlines()[:-1]: # We needn't read the last line
             opened, closed = 0, 0
             for _, token in self.lexer.get_tokens(line):
                 if token == "(":
@@ -46,22 +46,28 @@ class SyntaxHighlightingText(tk.Text):
             bracketlevels.append(newlevel if newlevel > 0 else 0)
         return bracketlevels
 
-    def key_press(self, key):
-        print self.selection_get()
-        cline = self.index(tk.INSERT).split('.')[0]
-        lineend = self.search("\n",self.index(tk.INSERT))
-
-        buffer = self.get('%s.%d'%(cline,0),lineend)
+    def highlight(self, lineno=None):
+        """Perform syntax highlighting on a specific line, or if no line
+        is specified, on the entire text."""
+        if not lineno:
+            lastline = int(self.index(tk.END).split(".")[0])
+            for x in xrange(lastline):
+                self.highlight(x+1)
+            return
+        
+        linestart = "%s.0" % lineno
+        lineend = self.search("\n",linestart)
+        self.remove_tags(linestart, lineend)
+        buffer = self.get(linestart, lineend)
         tokenized = self.lexer.get_tokens(buffer)
 
-        self.remove_tags('%s.%d'%(cline, 0), lineend)
-        
         start, end = 0, 0
         for ttype, token in tokenized:
             end = start + len(token)
             
             if ttype in self.tokentags:
-                self.tag_add(self.tokentags[ttype], '%s.%d'%(cline, start), '%s.%d'%(cline, end))
+                self.tag_add(self.tokentags[ttype],
+                             '%s.%d'%(lineno, start), '%s.%d'%(lineno, end))
             #if token in keyword.kwlist:
             #    self.tag_add('kw', '%s.%d'%(cline, start), '%s.%d'%(cline, end))
             #else:
@@ -74,3 +80,7 @@ class SyntaxHighlightingText(tk.Text):
             #            self.tag_add('int', '%s.%d'%(cline, start+index))
 
             start += len(token)
+
+    def key_press(self, key):
+        cline = self.index(tk.INSERT).split('.')[0]
+        self.highlight(cline)
