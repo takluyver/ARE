@@ -8,6 +8,7 @@ import rconsole, editor, saveload
 class AREApp(tk.Tk, saveload.SaveLoadMixin):
     def __init__(self):
         tk.Tk.__init__(self)
+        saveload.SaveLoadMixin.__init__(self)
         self.title("ARE")
         
         self.rprocess = Popen(["R","--interactive", "--no-save"],

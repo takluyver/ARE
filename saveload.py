@@ -3,14 +3,23 @@ import tkFileDialog
 import os.path
 
 class SaveLoadMixin(object):
-    """Add this class to an application's parent classes to add methods
-    to load from and save to file. This expects the application to have
-    a self.editor widget like Tk's text widget."""
+    """Include this class among a Tk application's parent classes to add
+    methods to load from and save to file. This expects the application
+    to have a self.editor widget like Tk's text widget."""
     filetypes = [("R script","*.r"),
     ("R script", "*.R"),
     ("All files", "*")]
     lastfilename = None
-        
+    
+    def __init__(self):
+        # Tell Tk to hide hidden files in dialogs. A bit hackish.
+        try:
+            self.tk.call('namespace', 'import', '::tk::dialog::file::')
+            self.tk.call('set', '::tk::dialog::file::showHiddenBtn','1')
+            self.tk.call('set', '::tk::dialog::file::showHiddenVar','0')
+        except Exception:
+            pass
+    
     def load(self, filename):
         """Load the given filename immediately."""
         self.editor.delete("1.0", tk.END)
