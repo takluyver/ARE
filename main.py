@@ -41,6 +41,8 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
         self.input = tk.Text(rhs, height=4, background="white")
         self.input.pack(fill=tk.X)
         self.input.bind("<Return>", self.inputeater)
+        # Use shift-enter for multi-line entry
+        self.input.bind("<Shift-Return>", lambda e: None)
         
         split.add(rhs)
             
