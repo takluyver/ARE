@@ -39,6 +39,7 @@ if __name__ == '__main__':
     
     # Left-right split
     root = tk.Tk()
+    root.title("ARE")
     split = tk.PanedWindow(root, sashwidth=6)
     split.pack(fill=tk.BOTH, expand=True)
     
@@ -71,6 +72,17 @@ if __name__ == '__main__':
     fileeditor = saveload.FileEditor(editpane)
     if len(sys.argv) > 1:
         fileeditor.load(sys.argv[1])
+        
+    # Menus
+    menubar = tk.Menu(root)
+    menubar.add_command(label="Open", command=fileeditor.askopen)
+    menubar.add_command(label="Save", command=fileeditor.saveas)
+    menubar.add_separator()
+    menubar.add_command(label="Run line (F5)", 
+                        command=editorlinerunner(rprocess))
+    menubar.add_command(label="Run all (Ctrl-F5)",
+                        command=editorallrunner(rprocess))
+    root.config(menu=menubar)
     
     # Show the window
     editpane.focus_set()
