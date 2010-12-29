@@ -21,6 +21,7 @@ class SyntaxHighlightingText(tk.Text):
         self.lexer = lexer
 
         self.bind('<Key>', self.key_press)
+        self.bind('<Control-a>', self.selectall)
 
     def config_tags(self):
         for tag, val in list(self.tags.items()):
@@ -32,6 +33,11 @@ class SyntaxHighlightingText(tk.Text):
             
     def getlines(self):
         return self.get("1.0", tk.END).split("\n")[:-1]
+        
+    def selectall(self, e=None):
+        self.selection_clear()
+        self.tag_add(tk.SEL, "1.0", tk.END)
+        return "break"
         
     def map_bracketlevels(self):
         bracketlevels = [0]

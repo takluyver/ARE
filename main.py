@@ -53,7 +53,7 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         menubar.add_command(label="Save", command=self.quietsave)
         menubar.add_command(label="Save as", command=self.asksave)
         menubar.add_separator()
-        menubar.add_command(label="Run line (F5)", 
+        menubar.add_command(label="Run line/selection (F5)", 
                             command=self.editorlinerunner)
         menubar.add_command(label="Run all (Ctrl-F5)",
                             command=self.editorallrunner)
@@ -72,16 +72,21 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         self.rprocess.stdin.flush()
                         
     def editorlinerunner(self, e=None):
-        bracketmap = self.editor.map_bracketlevels()
-        startline = int(self.editor.index(INSERT).split('.')[0]) - 1
-        while bracketmap[startline] > 0:
-            startline -= 1
-        endline = startline + 1
-        while endline < len(bracketmap) and bracketmap[endline] > 0:
-            endline += 1
-        
-        buf = self.editor.get("%d.0" % (startline+1),
-                                "%d.0" % (endline+1))
+        try:
+            buf = self.editor.selection_get()
+            if not buf.endswith("\n"):
+                buf += "\n"  # Add newline to execute command
+        except TclError:  # No selection
+            bracketmap = self.editor.map_bracketlevels()
+            startline = int(self.editor.index(INSERT).split('.')[0]) - 1
+            while bracketmap[startline] > 0:
+                startline -= 1
+            endline = startline + 1
+            while endline < len(bracketmap) and bracketmap[endline] > 0:
+                endline += 1
+            
+            buf = self.editor.get("%d.0" % (startline+1),
+                                    "%d.0" % (endline+1))
         self.sendrcode(buf)
         
     def editorallrunner(self, e=None):
