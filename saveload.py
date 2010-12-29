@@ -67,3 +67,8 @@ class SaveLoadMixin(object):
                     parent = self)
         if fn:
             self.load(fn)
+    
+    def newfile(self, e=None):
+        """Clear the editor, and forget the last file name used."""
+        self.editor.delete("1.0", tk.END)
+        self.lastfilename = None

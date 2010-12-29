@@ -49,10 +49,13 @@ class AREApp(Tk, saveload.SaveLoadMixin):
             
         # Menus
         menubar = Menu(self)
-        menubar.add_command(label="Open", command=self.askopen)
-        menubar.add_command(label="Save", command=self.quietsave)
-        menubar.add_command(label="Save as", command=self.asksave)
-        menubar.add_separator()
+        filemenu = Menu(menubar, tearoff=False)
+        filemenu.add_command(label="New", command=self.newfile)
+        filemenu.add_command(label="Open (Ctrl-O)", command=self.askopen)
+        filemenu.add_command(label="Save (Ctrl-S)", command=self.quietsave)
+        filemenu.add_command(label="Save as (Ctrl-Shift-S)", command=self.asksave)
+        
+        menubar.add_cascade(label="File", menu=filemenu)
         menubar.add_command(label="Run line/selection (F5)", 
                             command=self.editorlinerunner)
         menubar.add_command(label="Run all (Ctrl-F5)",
