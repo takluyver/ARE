@@ -1,4 +1,4 @@
-import Tkinter as tk
+import tkinter as tk
 import threading
 from fcntl import fcntl, F_SETFL
 from os import O_NONBLOCK
@@ -17,12 +17,11 @@ class ConsoleUpdater(threading.Thread):
         
     def run(self):
         while self.keepgoing:
-            try:
-                buf = self.process_stdout.read()
-            except IOError: # Nothing to read
+            buf = self.process_stdout.read()
+            if buf:
+                self.consolewidget.addtext(buf.decode())
+            else:
                 time.sleep(self.interval)
-                continue
-            self.consolewidget.addtext(buf)
     
     def stop(self):
         """Stops the thread, and blocks until it finishes."""
@@ -33,10 +32,10 @@ class ConsoleDisplay(tk.Text):
     def __init__(self, master=None, process=None, **options):
         options["state"] = tk.DISABLED
         tk.Text.__init__(self, master, **options)
+        self.updatelock = threading.Lock()
         self.process = process
         if process:
             self.attach(process)
-        self.updatelock = threading.Lock()
         
     def addtext(self, text):
         """Adds text to the end of the display in a thread-safe manner."""

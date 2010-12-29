@@ -1,5 +1,5 @@
-import Tkinter as tk
-import tkFileDialog
+import tkinter as tk
+import tkinter.filedialog
 import os.path
 
 class SaveLoadMixin(object):
@@ -42,7 +42,7 @@ class SaveLoadMixin(object):
         initialdir, initialfile = "",""
         if self.lastfilename:
             initialdir, initialfile = os.path.split(self.lastfilename)
-        fn = tkFileDialog.asksaveasfilename(defaultextension = ".r",
+        fn = tkinter.filedialog.asksaveasfilename(defaultextension = ".r",
                     filetypes = self.filetypes,
                     initialdir = initialdir, initialfile = initialfile,
                     parent = self)
@@ -62,7 +62,7 @@ class SaveLoadMixin(object):
         initialdir = ""
         if self.lastfilename:
             initialdir = os.path.split(self.lastfilename)[0]
-        fn = tkFileDialog.askopenfilename(filetypes = self.filetypes,
+        fn = tkinter.filedialog.askopenfilename(filetypes = self.filetypes,
                     initialdir = initialdir,
                     parent = self)
         if fn:

@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
-import Tkinter as tk
+import tkinter as tk
 from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
 import rconsole, editor, saveload
@@ -50,7 +50,7 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
         menubar = tk.Menu(self)
         menubar.add_command(label="Open", command=self.askopen)
         menubar.add_command(label="Save", command=self.quietsave)
-        menubar.add_command(label="Save as", command=self.quietsave)
+        menubar.add_command(label="Save as", command=self.asksave)
         menubar.add_separator()
         menubar.add_command(label="Run line (F5)", 
                             command=self.editorlinerunner)
@@ -65,6 +65,10 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
         
         # Show the window
         self.editor.focus_set()
+    
+    def sendrcode(self, code):
+        self.rprocess.stdin.write(code.encode())
+        self.rprocess.stdin.flush()
                         
     def editorlinerunner(self, e=None):
         bracketmap = self.editor.map_bracketlevels()
@@ -77,15 +81,15 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
         
         buf = self.editor.get("%d.%d"%(startline+1,0),
                                 "%d.%d"%(endline+1,0))
-        self.rprocess.stdin.write(buf)
+        self.sendrcode(buf)
         
     def editorallrunner(self, e=None):
         buf = self.editor.get("1.0",tk.END)
-        self.rprocess.stdin.write(buf)
+        self.sendrcode(buf)
         
     def inputeater(self, e=None):
         buf = self.input.get("1.0", tk.END)
-        self.rprocess.stdin.write(buf)
+        self.sendrcode(buf)
         self.input.delete("1.0", tk.END)
         return "break"
 

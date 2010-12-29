@@ -1,4 +1,4 @@
-import Tkinter as tk
+import tkinter as tk
 from string import ascii_letters, digits, punctuation
 from pygments.token import Literal, Comment, Punctuation
 
@@ -23,11 +23,11 @@ class SyntaxHighlightingText(tk.Text):
         self.bind('<Key>', self.key_press)
 
     def config_tags(self):
-        for tag, val in self.tags.items():
+        for tag, val in list(self.tags.items()):
             self.tag_config(tag, foreground=val)
 
     def remove_tags(self, start, end):
-        for tag in self.tags.keys():
+        for tag in list(self.tags.keys()):
             self.tag_remove(tag, start, end)
             
     def getlines(self):
@@ -51,7 +51,7 @@ class SyntaxHighlightingText(tk.Text):
         is specified, on the entire text."""
         if not lineno:
             lastline = int(self.index(tk.END).split(".")[0])
-            for x in xrange(lastline):
+            for x in range(lastline):
                 self.highlight(x+1)
             return
         
