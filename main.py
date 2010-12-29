@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import sys
-import tkinter as tk
+from tkinter import *
+from tkinter.ttk import Scrollbar  # Use newer scrollbar
 from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
 import rconsole, editor, saveload
 
-class AREApp(tk.Tk, saveload.SaveLoadMixin):
+class AREApp(Tk, saveload.SaveLoadMixin):
     def __init__(self):
-        tk.Tk.__init__(self)
+        Tk.__init__(self)
         saveload.SaveLoadMixin.__init__(self)
         self.title("ARE")
         
@@ -15,8 +16,8 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
                         stdin=PIPE, stdout=PIPE, stderr=STDOUT)
                         
         # Left-right split
-        split = tk.PanedWindow(self, sashwidth=6)
-        split.pack(fill=tk.BOTH, expand=True)
+        split = PanedWindow(self, sashwidth=6)
+        split.pack(fill=BOTH, expand=True)
         
         # Editor (left hand side)
         lexer = get_lexer_by_name("r")
@@ -26,28 +27,28 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
         split.add(self.editor)
         
         # Right hand side: console output...
-        rhs = tk.Frame(split)
-        consoleframe = tk.Frame(rhs)
+        rhs = Frame(split)
+        consoleframe = Frame(rhs)
         self.console = rconsole.ConsoleDisplay(consoleframe,
                                                 process=self.rprocess)
-        self.console.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar = tk.Scrollbar(consoleframe, command=self.console.yview)
+        self.console.pack(side=LEFT, fill=BOTH, expand=True)
+        scrollbar = Scrollbar(consoleframe, command=self.console.yview)
         self.console.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        scrollbar.pack(side=LEFT, fill=Y)
         
-        consoleframe.pack(fill=tk.BOTH, expand=True)
+        consoleframe.pack(fill=BOTH, expand=True)
         
         # ...and input
-        self.input = tk.Text(rhs, height=4, background="white")
-        self.input.pack(fill=tk.X)
+        self.input = Text(rhs, height=4, background="white")
+        self.input.pack(fill=X)
         self.input.bind("<Return>", self.inputeater)
-        # Use shift-enter for multi-line entry
+        # Use shift-enter for multi-line entry, so allow default action
         self.input.bind("<Shift-Return>", lambda e: None)
         
         split.add(rhs)
             
         # Menus
-        menubar = tk.Menu(self)
+        menubar = Menu(self)
         menubar.add_command(label="Open", command=self.askopen)
         menubar.add_command(label="Save", command=self.quietsave)
         menubar.add_command(label="Save as", command=self.asksave)
@@ -72,25 +73,25 @@ class AREApp(tk.Tk, saveload.SaveLoadMixin):
                         
     def editorlinerunner(self, e=None):
         bracketmap = self.editor.map_bracketlevels()
-        startline = int(self.editor.index(tk.INSERT).split('.')[0]) - 1
+        startline = int(self.editor.index(INSERT).split('.')[0]) - 1
         while bracketmap[startline] > 0:
             startline -= 1
         endline = startline + 1
         while endline < len(bracketmap) and bracketmap[endline] > 0:
             endline += 1
         
-        buf = self.editor.get("%d.%d"%(startline+1,0),
-                                "%d.%d"%(endline+1,0))
+        buf = self.editor.get("%d.0" % (startline+1),
+                                "%d.0" % (endline+1))
         self.sendrcode(buf)
         
     def editorallrunner(self, e=None):
-        buf = self.editor.get("1.0",tk.END)
+        buf = self.editor.get("1.0", END)
         self.sendrcode(buf)
         
     def inputeater(self, e=None):
-        buf = self.input.get("1.0", tk.END)
+        buf = self.input.get("1.0", END)
         self.sendrcode(buf)
-        self.input.delete("1.0", tk.END)
+        self.input.delete("1.0", END)
         return "break"
 
 def main():
