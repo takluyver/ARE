@@ -1,5 +1,5 @@
 from rpy2.robjects import r as R
-from rpy2.rinterface import RRuntimeError, setWriteConsole
+from rpy2.rinterface import RRuntimeError, set_writeconsole
 
 class TranslatedRRuntimeError(RRuntimeError):
     pass
@@ -36,7 +36,7 @@ def Rexec(command):
 #     e.g. "a <- 1"
 # * The command may cause output to the console, e.g. "print(1:4)".
 consolebuffer = []
-setWriteConsole(consolebuffer.append)
+set_writeconsole(consolebuffer.append)
 def Rconsoleexec(command):
     try:
         res = Rexec(command)
@@ -47,6 +47,6 @@ def Rconsoleexec(command):
         if consolebuffer:
             out += "".join(consolebuffer)
         if res:
-            out += str(res) + "\n"
+            out += str(res)
     del consolebuffer[:]
     return out

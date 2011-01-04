@@ -21,7 +21,7 @@ def runtests():
     for input, correctoutput in tests:
         output = Rconsoleexec(input)
         assert output == correctoutput, "%s != %s    (from %s)" %\
-                                        (output, correctoutput, input)
+                                    (repr(output), repr(correctoutput), input)
         print(".", end="")
     print("\n%d OK" % len(tests))
     
