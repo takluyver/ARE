@@ -2,18 +2,14 @@
 import sys
 from tkinter import *
 from tkinter.ttk import Scrollbar  # Use newer scrollbar
-from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
-import rconsole, editor, saveload
+from . import rconsole, editor, saveload
 
 class AREApp(Tk, saveload.SaveLoadMixin):
     def __init__(self):
         Tk.__init__(self)
         saveload.SaveLoadMixin.__init__(self)
         self.title("ARE")
-        
-        self.rprocess = Popen(["R","--interactive", "--no-save"],
-                        stdin=PIPE, stdout=PIPE, stderr=STDOUT)
                         
         # Left-right split
         split = PanedWindow(self, sashwidth=6)
@@ -29,8 +25,7 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         # Right hand side: console output...
         rhs = Frame(split)
         consoleframe = Frame(rhs)
-        self.console = rconsole.ConsoleDisplay(consoleframe,
-                                                process=self.rprocess)
+        self.console = rconsole.ConsoleDisplay(consoleframe)
         self.console.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar = Scrollbar(consoleframe, command=self.console.yview)
         self.console.config(yscrollcommand=scrollbar.set)
@@ -71,8 +66,7 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         self.editor.focus_set()
     
     def sendrcode(self, code):
-        self.rprocess.stdin.write(code.encode())
-        self.rprocess.stdin.flush()
+        self.console.rpy_runner.cmd_queue.put(code)
                         
     def editorlinerunner(self, e=None):
         try:
@@ -107,10 +101,6 @@ def main():
     if len(sys.argv) > 1:
         fileeditor.load(sys.argv[1])
     root.mainloop()
-    
-    # Close down, without leaving an orphaned process.
-    root.console.updater.stop()
-    root.rprocess.terminate()
 
 if __name__ == '__main__':
     main()

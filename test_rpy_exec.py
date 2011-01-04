@@ -1,5 +1,4 @@
-from __future__ import print_function
-from rpy_exec_test import Rconsoleexec
+from Are.rexec import rconsoleexec
 
 # Inputs and outputs
 tests = [("123",'[1] 123\n'),
@@ -19,7 +18,7 @@ tests = [("123",'[1] 123\n'),
 def runtests():
     print("Starting tests")
     for input, correctoutput in tests:
-        output = Rconsoleexec(input)
+        output = rconsoleexec(input)
         assert output == correctoutput, "%s != %s    (from %s)" %\
                                     (repr(output), repr(correctoutput), input)
         print(".", end="")

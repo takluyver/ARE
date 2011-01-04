@@ -1,41 +1,30 @@
 import tkinter as tk
 import threading
-from fcntl import fcntl, F_SETFL
-from os import O_NONBLOCK
-import time
+from queue import Queue
+from .rexec import rconsoleexec
 
 class ConsoleUpdater(threading.Thread):
     daemon = True
-    keepgoing = True
-    def __init__(self, consolewidget, process_stdout, interval = 0.1):
+    def __init__(self, consolewidget):
         threading.Thread.__init__(self)
         self.consolewidget = consolewidget
-        # Set file handle to allow non-blocking read
-        fcntl(process_stdout, F_SETFL, O_NONBLOCK)
-        self.process_stdout = process_stdout
-        self.interval = interval
+        self.cmd_queue = Queue()
         
     def run(self):
-        while self.keepgoing:
-            buf = self.process_stdout.read()
-            if buf:
-                self.consolewidget.addtext(buf.decode())
-            else:
-                time.sleep(self.interval)
-    
-    def stop(self):
-        """Stops the thread, and blocks until it finishes."""
-        self.keepgoing = False
-        self.join()
+        while True:
+            next_cmd = self.cmd_queue.get()
+            self.consolewidget.addtext("> "+next_cmd)
+            output = rconsoleexec(next_cmd)
+            print(repr(next_cmd),repr(output))
+            self.consolewidget.addtext(output)
 
 class ConsoleDisplay(tk.Text):
-    def __init__(self, master=None, process=None, **options):
+    def __init__(self, master=None, **options):
         options["state"] = tk.DISABLED
         tk.Text.__init__(self, master, **options)
         self.updatelock = threading.Lock()
-        self.process = process
-        if process:
-            self.attach(process)
+        self.rpy_runner = ConsoleUpdater(self)
+        self.rpy_runner.start()
         
     def addtext(self, text):
         """Adds text to the end of the display in a thread-safe manner."""
@@ -44,10 +33,3 @@ class ConsoleDisplay(tk.Text):
             self.insert(tk.END, text)
             self.config(state=tk.DISABLED)
             self.see(tk.END)
-        
-    def attach(self, process):
-        """Attach a process (from subprocess.Popen) to the terminal,
-        which will be updated from its stdout."""
-        self.process = process
-        self.updater = ConsoleUpdater(self, process.stdout)
-        self.updater.start()

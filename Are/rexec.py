@@ -6,11 +6,11 @@ class TranslatedRRuntimeError(RRuntimeError):
     
 NULL = R("NULL")
 
-def Rexec(command):
+def rexec(command):
     command = command.strip()
     if not command:
         return      # Special case for no input
-    parsecommand = 'parse(text = "%s")' % command
+    parsecommand = 'parse(text = "%s")' % command.replace("\"",r"\"")
     try:
         R('.__currexpr__ = ' + parsecommand)
     except RRuntimeError as e:
@@ -37,9 +37,9 @@ def Rexec(command):
 # * The command may cause output to the console, e.g. "print(1:4)".
 consolebuffer = []
 set_writeconsole(consolebuffer.append)
-def Rconsoleexec(command):
+def rconsoleexec(command):
     try:
-        res = Rexec(command)
+        res = rexec(command)
     except RRuntimeError as e:
         out = e.args[0]
     else:
