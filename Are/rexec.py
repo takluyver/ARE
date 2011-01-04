@@ -3,8 +3,6 @@ from rpy2.rinterface import RRuntimeError, set_writeconsole
 
 class TranslatedRRuntimeError(RRuntimeError):
     pass
-    
-NULL = R("NULL")
 
 def rexec(command):
     command = command.strip()
@@ -50,3 +48,5 @@ def rconsoleexec(command):
             out += str(res)
     del consolebuffer[:]
     return out
+    
+r_version_string = R["version"].rx2("version.string")[0]

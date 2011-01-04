@@ -87,8 +87,18 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         self.sendrcode(buf)
         
     def editorallrunner(self, e=None):
-        buf = self.editor.get("1.0", END)
-        self.sendrcode(buf)
+        lines = zip(self.editor.map_bracketlevels(), self.editor.getlines())
+        buf = []
+        for bracketlevel, nextline in lines:
+            if nextline.strip().startswith("#"):  # Ignore comment lines
+                continue
+            if bracketlevel > 0:
+                buf.append(nextline)
+            else:
+                self.sendrcode("\n".join(buf))
+                buf = [nextline]
+        # Send anything left in the buffer
+        self.sendrcode("\n".join(buf))
         
     def inputeater(self, e=None):
         buf = self.input.get("1.0", END)
