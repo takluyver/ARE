@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter.ttk import Scrollbar  # Use newer scrollbar
 from subprocess import Popen, PIPE, STDOUT
 from pygments.lexers import get_lexer_by_name
-import rconsole, editor, saveload
+from . import rconsole, editor, saveload
 
 class AREApp(Tk, saveload.SaveLoadMixin):
     def __init__(self):
