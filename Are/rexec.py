@@ -1,5 +1,6 @@
 from rpy2.robjects import r as R
 from rpy2.rinterface import RRuntimeError, set_writeconsole
+from rpy2.interactive import process_revents   # Automatically starts event processing thread
 
 class TranslatedRRuntimeError(RRuntimeError):
     pass
