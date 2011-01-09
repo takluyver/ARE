@@ -20,7 +20,7 @@ class SyntaxHighlightingText(tk.Text):
         self.characters = ascii_letters + digits + punctuation
         self.lexer = lexer
 
-        self.bind('<Key>', self.key_press)
+        self.bind('<KeyRelease>', self.key_press)
         self.bind('<Control-a>', self.selectall)
 
     def config_tags(self):

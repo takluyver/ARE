@@ -15,7 +15,7 @@ class ConsoleUpdater(threading.Thread):
             next_cmd = self.cmd_queue.get()
             self.consolewidget.addtext("> "+next_cmd.rstrip() + "\n")
             output = rconsoleexec(next_cmd)
-            print(repr(next_cmd),repr(output))
+            #print(repr(next_cmd),repr(output))  #DEBUG
             self.consolewidget.addtext(output)
 
 
