@@ -18,8 +18,8 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         # Editor (left hand side)
         lexer = get_lexer_by_name("r")
         self.editor = editor.SyntaxHighlightingText(split, lexer)
-        self.editor.bind("<F5>", self.editorlinerunner)
-        self.editor.bind("<Control-F5>", self.editorallrunner)
+        self.editor.bind("<F5>", self.editor_run_sel)
+        self.editor.bind("<Control-F5>", self.editor_run_all)
         split.add(self.editor)
         
         # Right hand side: console output...
@@ -52,9 +52,9 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         
         menubar.add_cascade(label="File", menu=filemenu)
         menubar.add_command(label="Run line/selection (F5)", 
-                            command=self.editorlinerunner)
+                            command=self.editor_run_sel)
         menubar.add_command(label="Run all (Ctrl-F5)",
-                            command=self.editorallrunner)
+                            command=self.editor_run_all)
         self.config(menu=menubar)
         
         # Keyboard shortcuts
@@ -66,36 +66,48 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         self.editor.focus_set()
     
     def sendrcode(self, code):
+        """Send an R statement to be executed."""
         self.console.rpy_runner.cmd_queue.put(code)
                         
-    def editorlinerunner(self, e=None):
+    def editor_run_sel(self, e=None):
         try:
-            buf = self.editor.selection_get()
-            if not buf.endswith("\n"):
-                buf += "\n"  # Add newline to execute command
-        except TclError:  # No selection
-            bracketmap = self.editor.map_bracketlevels()
+            startline = int(self.editor.index(SEL_FIRST).split('.')[0]) - 1
+            endline = int(self.editor.index(SEL_LAST).split('.')[0])
+        except TclError:  # No selection - use insert cursor
             startline = int(self.editor.index(INSERT).split('.')[0]) - 1
-            while bracketmap[startline] > 0:
-                startline -= 1
             endline = startline + 1
-            while endline < len(bracketmap) and bracketmap[endline] > 0:
-                endline += 1
-            
-            buf = self.editor.get("%d.0" % (startline+1),
-                                    "%d.0" % (endline+1))
-        self.sendrcode(buf)
+        self.editor_linesrunner(startline, endline)
         
-    def editorallrunner(self, e=None):
-        lines = zip(self.editor.map_bracketlevels(), self.editor.getlines())
+    def editor_run_all(self, e=None):
+        endline = int(self.editor.index(END).split('.')[0])
+        self.editor_linesrunner(0, endline)
+        
+    def editor_linesrunner(self, startline, endline, ignore_comment_lines=True):
+        """Run the lines of the editor from startline to endline. These should
+        be numbers in the 0-based Python convention, and excludes endline (like
+        slicing).
+        
+        This will run extra lines if the indicated lines have start or finish
+        in the middle of a bracketed statement."""
+        # Expand the selection based on brackets
+        bracketmap = self.editor.map_bracketlevels()
+        while bracketmap[startline] > 0:
+            startline -= 1
+        while endline < len(bracketmap) and bracketmap[endline] > 0:
+            endline += 1
+            
+        lines = zip(bracketmap[startline:endline],
+                    self.editor.getlines()[startline:endline])
         buf = []
+        # Group into statements by brackets
         for bracketlevel, nextline in lines:
-            if nextline.strip().startswith("#"):  # Ignore comment lines
+            if ignore_comment_lines and nextline.strip().startswith("#"):
                 continue
             if bracketlevel > 0:
                 buf.append(nextline)
             else:
-                self.sendrcode("\n".join(buf))
+                if buf:
+                    self.sendrcode("\n".join(buf))
                 buf = [nextline]
         # Send anything left in the buffer
         self.sendrcode("\n".join(buf))
