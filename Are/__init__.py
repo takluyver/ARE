@@ -24,21 +24,11 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         
         # Right hand side: console output...
         rhs = Frame(split)
-        consoleframe = Frame(rhs)
-        self.console = rconsole.ConsoleDisplay(consoleframe)
+        self.console = rconsole.Console(rhs)
         self.console.pack(side=LEFT, fill=BOTH, expand=True)
-        scrollbar = Scrollbar(consoleframe, command=self.console.yview)
+        scrollbar = Scrollbar(rhs, command=self.console.yview)
         self.console.config(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=LEFT, fill=Y)
-        
-        consoleframe.pack(fill=BOTH, expand=True)
-        
-        # ...and input
-        self.input = Text(rhs, height=4, background="white")
-        self.input.pack(fill=X)
-        self.input.bind("<Return>", self.inputeater)
-        # Use shift-enter for multi-line entry, so allow default action
-        self.input.bind("<Shift-Return>", lambda e: None)
         
         split.add(rhs)
             

@@ -13,10 +13,12 @@ class ConsoleUpdater(threading.Thread):
     def run(self):
         while True:
             next_cmd = self.cmd_queue.get()
-            self.consolewidget.addtext("> "+next_cmd.rstrip() + "\n")
+            self.consolewidget.replace_cmd(next_cmd.rstrip() + "\n")
+            self.consolewidget.config(state=tk.DISABLED)
             output = rconsoleexec(next_cmd)
             #print(repr(next_cmd),repr(output))  #DEBUG
             self.consolewidget.addtext(output)
+            self.consolewidget.ready()
 
 
 introtext = """Welcome to %s
@@ -26,14 +28,48 @@ Enter R commands below (shift-enter if you need more than one line), or edit scr
 
 """ % r_version_string
 
-class ConsoleDisplay(tk.Text):
-    def __init__(self, master=None, **options):
-        options["state"] = tk.DISABLED
-        tk.Text.__init__(self, master, **options)
+class Console(tk.Text):
+    prompt = "> "
+    def __init__(self, master=None, background="white", **options):
+        tk.Text.__init__(self, master, background=background, **options)
         self.updatelock = threading.Lock()
         self.rpy_runner = ConsoleUpdater(self)
         self.rpy_runner.start()
+        
+        self.bind("<Home>", self.home)
+        self.bind("<Return>", self.run_cmd)
+        self.bind("<KP_Enter>", self.run_cmd)
+        # Use shift-enter for multi-line entry, so allow default action
+        self.bind("<Shift-Return>", lambda e: None)
+        # Tk doesn't normally add a new line on numpad enter.
+        self.bind("<Shift-KP_Enter>", lambda e: self.insert(tk.INSERT, "\n"))
+        
         self.addtext(introtext)
+        self.ready()
+        
+    def home(self, e=None):
+        self.mark_set(tk.INSERT, "cmd_start")
+        return "break"
+        
+    def ready(self):
+        self.config(state=tk.NORMAL)
+        with self.updatelock:
+            self.insert(tk.END, self.prompt)
+            self.mark_set(tk.INSERT, tk.END)
+            self.mark_set("cmd_start", tk.INSERT)
+            self.mark_gravity("cmd_start", tk.LEFT)
+            
+    def replace_cmd(self, new_cmd):
+        with self.updatelock:
+            self.delete("cmd_start", tk.END)
+            self.insert(tk.END, new_cmd)
+            
+    def get_cmd(self):
+        return self.get("cmd_start", tk.END)
+        
+    def run_cmd(self, e=None):
+        self.rpy_runner.cmd_queue.put(self.get_cmd())
+        return "break"
         
     def addtext(self, text):
         """Adds text to the end of the display in a thread-safe manner."""
