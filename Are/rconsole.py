@@ -13,7 +13,8 @@ class ConsoleUpdater(threading.Thread):
     def run(self):
         while True:
             next_cmd = self.cmd_queue.get()
-            self.consolewidget.replace_cmd(next_cmd.rstrip() + "\n")
+            self.consolewidget.replace_cmd(next_cmd + "\n")
+            self.consolewidget.add_cmd_above(next_cmd)
             self.consolewidget.config(state=tk.DISABLED)
             output = rconsoleexec(next_cmd)
             #print(repr(next_cmd),repr(output))  #DEBUG
@@ -35,8 +36,11 @@ class Console(tk.Text):
         self.updatelock = threading.Lock()
         self.rpy_runner = ConsoleUpdater(self)
         self.rpy_runner.start()
+        self.cmds_above, self.cmds_below = [], []
         
         self.bind("<Home>", self.home)
+        self.bind("<Up>", self.lineup)
+        self.bind("<Down>", self.linedown)
         self.bind("<Return>", self.run_cmd)
         self.bind("<KP_Enter>", self.run_cmd)
         # Use shift-enter for multi-line entry, so allow default action
@@ -49,6 +53,25 @@ class Console(tk.Text):
         
     def home(self, e=None):
         self.mark_set(tk.INSERT, "cmd_start")
+        return "break"
+        
+    def add_cmd_above(self, cmd):
+        try:
+            if cmd and (cmd != self.cmds_above[-1]):
+                self.cmds_above.append(cmd)
+        except IndexError:
+            self.cmds_above.append(cmd)
+        
+    def lineup(self, e=None):
+        if self.cmds_above:
+            self.cmds_below.append(self.get_cmd())
+            self.replace_cmd(self.cmds_above.pop())
+        return "break"
+        
+    def linedown(self, e=None):
+        if self.cmds_below:
+            self.add_cmd_above(self.get_cmd())
+            self.replace_cmd(self.cmds_below.pop())
         return "break"
         
     def ready(self):
@@ -65,7 +88,7 @@ class Console(tk.Text):
             self.insert(tk.END, new_cmd)
             
     def get_cmd(self):
-        return self.get("cmd_start", tk.END)
+        return self.get("cmd_start", tk.END).rstrip()
         
     def run_cmd(self, e=None):
         self.rpy_runner.cmd_queue.put(self.get_cmd())
