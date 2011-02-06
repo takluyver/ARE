@@ -1,25 +1,24 @@
 import tkinter as tk
 import threading
 from queue import Queue
-from .rexec import rconsoleexec, r_version_string
+from .rexec import rconsoleexec, r_version_string, rinterface
 
 class ConsoleUpdater(threading.Thread):
     daemon = True
     def __init__(self, consolewidget):
         threading.Thread.__init__(self)
-        self.consolewidget = consolewidget
-        self.cmd_queue = Queue()
+        self.console = consolewidget
         
     def run(self):
         while True:
-            next_cmd = self.cmd_queue.get()
-            self.consolewidget.replace_cmd(next_cmd + "\n")
-            self.consolewidget.add_cmd_above(next_cmd)
-            self.consolewidget.config(state=tk.DISABLED)
+            next_cmd = self.console.cmd_queue.get()
+            self.console.replace_line(next_cmd + "\n")
+            self.console.add_cmd_above(next_cmd)
+            self.console.config(state=tk.DISABLED)
             output = rconsoleexec(next_cmd)
             #print(repr(next_cmd),repr(output))  #DEBUG
-            self.consolewidget.addtext(output)
-            self.consolewidget.ready()
+            self.console.addtext(output)
+            self.console.prompt()
 
 
 introtext = """Welcome to %s
@@ -30,10 +29,11 @@ Enter R commands below (shift-enter if you need more than one line), or edit scr
 """ % r_version_string
 
 class Console(tk.Text):
-    prompt = "> "
     def __init__(self, master=None, background="white", **options):
         tk.Text.__init__(self, master, background=background, **options)
         self.updatelock = threading.Lock()
+        self.active_queue = self.cmd_queue = Queue()
+        self.input_queue = Queue(1)
         self.rpy_runner = ConsoleUpdater(self)
         self.rpy_runner.start()
         self.cmds_above, self.cmds_below = [], []
@@ -41,15 +41,17 @@ class Console(tk.Text):
         self.bind("<Home>", self.home)
         self.bind("<Up>", self.lineup)
         self.bind("<Down>", self.linedown)
-        self.bind("<Return>", self.run_cmd)
-        self.bind("<KP_Enter>", self.run_cmd)
+        self.bind("<Return>", self.send_line)
+        self.bind("<KP_Enter>", self.send_line)
         # Use shift-enter for multi-line entry, so allow default action
         self.bind("<Shift-Return>", lambda e: None)
         # Tk doesn't normally add a new line on numpad enter.
         self.bind("<Shift-KP_Enter>", lambda e: self.insert(tk.INSERT, "\n"))
         
+        rinterface.set_readconsole(self.console_input)
+        
         self.addtext(introtext)
-        self.ready()
+        self.prompt()
         
     def home(self, e=None):
         self.mark_set(tk.INSERT, "cmd_start")
@@ -74,24 +76,38 @@ class Console(tk.Text):
             self.replace_cmd(self.cmds_below.pop())
         return "break"
         
-    def ready(self):
+    def prompt(self, prompt="> "):
         self.config(state=tk.NORMAL)
         with self.updatelock:
-            self.insert(tk.END, self.prompt)
+            self.insert(tk.END, prompt)
             self.mark_set(tk.INSERT, tk.END)
             self.mark_set("cmd_start", tk.INSERT)
             self.mark_gravity("cmd_start", tk.LEFT)
             
-    def replace_cmd(self, new_cmd):
+    def console_input(self, prompt):
+        """Prompts the user for input, then blocks, and returns the text entered.
+        Intended to be used in the execution thread, not the main (UI) thread."""
+        self.prompt(prompt)
+        self.active_queue = self.input_queue
+        entered = self.input_queue.get()
+        self.active_queue = self.cmd_queue
+        self.insert(tk.END, "\n")
+        return entered
+            
+    def replace_line(self, new_line):
+        """Replaces the text after the prompt with the given string."""
         with self.updatelock:
             self.delete("cmd_start", tk.END)
-            self.insert(tk.END, new_cmd)
+            self.insert(tk.END, new_line)
             
-    def get_cmd(self):
+    def get_line(self):
+        """Returns the text after the prompt."""
         return self.get("cmd_start", tk.END).rstrip()
         
-    def run_cmd(self, e=None):
-        self.rpy_runner.cmd_queue.put(self.get_cmd())
+    def send_line(self, e=None):
+        """Called when <Return> is pressed. Normally sends a command to
+        cmd_queue, but console_input redirects this to input_queue."""
+        self.active_queue.put(self.get_line())
         return "break"
         
     def addtext(self, text):
