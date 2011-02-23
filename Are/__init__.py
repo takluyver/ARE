@@ -20,6 +20,8 @@ class AREApp(Tk, saveload.SaveLoadMixin):
         self.editor = editor.SyntaxHighlightingText(split, lexer)
         self.editor.bind("<F5>", self.editor_run_sel)
         self.editor.bind("<Control-F5>", self.editor_run_all)
+        # This will mark the editor as changed since last save:
+        self.editor.bind("<Key>", self.keyevent_dirty)
         split.add(self.editor)
         
         # Right hand side: console output...

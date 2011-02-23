@@ -10,6 +10,13 @@ class SaveLoadMixin(object):
     ("R script", "*.R"),
     ("All files", "*")]
     lastfilename = None
+    editor_dirty = False
+    
+    @property
+    def shortfilename(self):
+        if self.lastfilename:
+            return os.path.split(self.lastfilename)[-1]
+        return ""
     
     def __init__(self):
         # Tell Tk to hide hidden files in dialogs. A bit hackish.
@@ -29,12 +36,14 @@ class SaveLoadMixin(object):
             self.editor.insert(tk.END, f.read())
         self.editor.highlight()
         self.lastfilename = filename
+        self.set_clean()
             
     def save(self, filename):
         """Save immediately to the given filename."""
         with open(filename, "w") as f:
             f.write(self.editor.get("1.0", tk.END))
         self.lastfilename = filename
+        self.set_clean()
        
     # The below methods have a dummy parameter for use as event handlers
     def asksave(self, e=None):
@@ -72,3 +81,17 @@ class SaveLoadMixin(object):
         """Clear the editor, and forget the last file name used."""
         self.editor.delete("1.0", tk.END)
         self.lastfilename = None
+        self.set_clean()
+    
+    # Clean/dirty state    
+    def keyevent_dirty(self, e):
+        if e.char and not self.editor_dirty:
+            self.set_dirty()
+    
+    def set_dirty(self):
+        self.editor_dirty = True
+        self.title("*"+self.shortfilename + " - ARE")
+
+    def set_clean(self):
+        self.editor_dirty = False
+        self.title(self.shortfilename + " - ARE")
