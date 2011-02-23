@@ -1,8 +1,8 @@
+from rpy2 import rinterface
 from rpy2.robjects import r as R
-from rpy2.rinterface import RRuntimeError, set_writeconsole
 from rpy2.interactive import process_revents   # Automatically starts event processing thread
 
-class TranslatedRRuntimeError(RRuntimeError):
+class TranslatedRRuntimeError(rinterface.RRuntimeError):
     pass
 
 def rexec(command):
@@ -35,7 +35,7 @@ def rexec(command):
 #     e.g. "a <- 1"
 # * The command may cause output to the console, e.g. "print(1:4)".
 consolebuffer = []
-set_writeconsole(consolebuffer.append)
+rinterface.set_writeconsole(consolebuffer.append)
 def rconsoleexec(command):
     try:
         res = rexec(command)

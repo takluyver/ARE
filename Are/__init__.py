@@ -59,7 +59,7 @@ class AREApp(Tk, saveload.SaveLoadMixin):
     
     def sendrcode(self, code):
         """Send an R statement to be executed."""
-        self.console.rpy_runner.cmd_queue.put(code)
+        self.console.cmd_queue.put(code)
                         
     def editor_run_sel(self, e=None):
         try:
