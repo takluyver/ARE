@@ -12,7 +12,7 @@ class ConsoleUpdater(threading.Thread):
     def run(self):
         while True:
             next_cmd = self.console.cmd_queue.get()
-            self.console.replace_line(next_cmd + "\n")
+            self.console.replace_entry(next_cmd + "\n")
             self.console.add_cmd_above(next_cmd)
             self.console.config(state=tk.DISABLED)
             output = rconsoleexec(next_cmd)
@@ -66,14 +66,14 @@ class Console(tk.Text):
         
     def lineup(self, e=None):
         if self.cmds_above:
-            self.cmds_below.append(self.get_cmd())
-            self.replace_cmd(self.cmds_above.pop())
+            self.cmds_below.append(self.get_entry())
+            self.replace_entry(self.cmds_above.pop())
         return "break"
         
     def linedown(self, e=None):
         if self.cmds_below:
-            self.add_cmd_above(self.get_cmd())
-            self.replace_cmd(self.cmds_below.pop())
+            self.add_cmd_above(self.get_entry())
+            self.replace_entry(self.cmds_below.pop())
         return "break"
         
     def prompt(self, prompt="> "):
@@ -94,20 +94,20 @@ class Console(tk.Text):
         self.insert(tk.END, "\n")
         return entered
             
-    def replace_line(self, new_line):
+    def replace_entry(self, new_line):
         """Replaces the text after the prompt with the given string."""
         with self.updatelock:
             self.delete("cmd_start", tk.END)
             self.insert(tk.END, new_line)
             
-    def get_line(self):
+    def get_entry(self):
         """Returns the text after the prompt."""
         return self.get("cmd_start", tk.END).rstrip()
         
     def send_line(self, e=None):
         """Called when <Return> is pressed. Normally sends a command to
         cmd_queue, but console_input redirects this to input_queue."""
-        self.active_queue.put(self.get_line())
+        self.active_queue.put(self.get_entry())
         return "break"
         
     def addtext(self, text):

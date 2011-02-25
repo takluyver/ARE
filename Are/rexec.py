@@ -12,13 +12,13 @@ def rexec(command):
     parsecommand = 'parse(text = "%s")' % command.replace("\"",r"\"")
     try:
         R('.__currexpr__ = ' + parsecommand)
-    except RRuntimeError as e:
+    except rinterface.RRuntimeError as e:
         parsecommand = parsecommand.replace("\n","\\n").replace("\t","\\t")
         raise TranslatedRRuntimeError("Error: " +\
                         e.args[0].partition(parsecommand + " : ")[2])
     try:
         result, visible = R('withVisible(eval(.__currexpr__))')
-    except RRuntimeError as e:
+    except rinterface.RRuntimeError as e:
         m = e.args[0].partition("eval(expr, envir, enclos) : ")[2]
         if m:
             raise TranslatedRRuntimeError("Error: " + m)
@@ -39,7 +39,7 @@ rinterface.set_writeconsole(consolebuffer.append)
 def rconsoleexec(command):
     try:
         res = rexec(command)
-    except RRuntimeError as e:
+    except rinterface.RRuntimeError as e:
         out = e.args[0]
     else:
         out = ""
