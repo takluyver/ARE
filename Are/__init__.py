@@ -113,7 +113,7 @@ class AREApp(Tk, saveload.SaveLoadMixin):
 def main():
     root = AREApp()
     if len(sys.argv) > 1:
-        fileeditor.load(sys.argv[1])
+        root.load(sys.argv[1])
     root.mainloop()
 
 if __name__ == '__main__':
